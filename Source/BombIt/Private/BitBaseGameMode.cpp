@@ -4,29 +4,17 @@
 #include "BitBaseGameMode.h"
 #include "BitGameState.h"
 #include "BitPawn.h"
+#include "BitHUD.h"
 
 ABitBaseGameMode::ABitBaseGameMode(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	/* Assign the class types used by this gamemode */
-
-	/*// Player
-	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprints/LittleBird_BP"));
-	if (PlayerPawnBPClass.Class != NULL)
-	{
-		DefaultPawnClass = PlayerPawnBPClass.Class;
-	}
-	// HUD
-	static ConstructorHelpers::FClassFinder<AHeliHud> HudBPClass(TEXT("/Game/Blueprints/HeliHud_BP"));
-	if (HudBPClass.Class != NULL)
-	{
-		HUDClass = HudBPClass.Class;
-	}
-
-	PlayerControllerClass = AHeliPlayerController::StaticClass();
-	PlayerStateClass = AHeliPlayerState::StaticClass();*/
-	
+	/* Assign the class types used by this gamemode */	
 	DefaultPawnClass = ABitPawn::StaticClass();
+	HUDClass = ABitHUD::StaticClass();
 	GameStateClass = ABitGameState::StaticClass();
+	/*PlayerControllerClass = AHeliPlayerController::StaticClass();
+	PlayerStateClass = AHeliPlayerState::StaticClass(); */
+	
 	WarmupTime = 0;
 	RoundTime = 0;
 
