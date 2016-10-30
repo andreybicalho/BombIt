@@ -9,12 +9,15 @@ UCLASS()
 class BOMBIT_API ABitPawn : public APawn
 {
 	GENERATED_BODY()
-	
-	UPROPERTY(Category = PlayerRepresentation, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-	class USceneComponent* DummyRootComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* Camera;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = MovementSettings, meta = (AllowPrivateAccess = "true"))
+	float RotationSense;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = MovementSettings, meta = (AllowPrivateAccess = "true"))
+	float MoveSense;
 
 public:
 	// Sets default values for this pawn's properties
@@ -27,13 +30,13 @@ public:
 	virtual void BeginPlay() override;
 
 	// Called every frame
-	virtual void Tick(float DeltaSeconds) override;
+	//virtual void Tick(float DeltaSeconds) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
 
 	/*
-	*	Inputs
+	*	Inputs and Movement
 	*/
 
 	// actions
@@ -43,6 +46,9 @@ public:
 	// axis
 	void MoveForward(float Value);
 	void MoveRight(float Value);
+	void MoveUp(float Value);
+	void CameraPitch(float Value);
+	void CameraYaw(float Value);
 
 private:
 	void LookAtTarget(const AActor &Target);

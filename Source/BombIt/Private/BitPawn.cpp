@@ -8,16 +8,14 @@
 ABitPawn::ABitPawn()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
-	DummyRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DummyRootComponent"));
-	RootComponent = DummyRootComponent;
-
+	PrimaryActorTick.bCanEverTick = false;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(DummyRootComponent);
-	Camera->bUsePawnControlRotation = true;
+	Camera->SetupAttachment(RootComponent);
+	Camera->bUsePawnControlRotation = false; // since we are rotating our actor by ourselves
 
+	RotationSense = 1.f;
+	MoveSense = 1.f;
 }
 
 
@@ -35,11 +33,10 @@ void ABitPawn::BeginPlay()
 }
 
 // Called every frame
-void ABitPawn::Tick( float DeltaTime )
-{
-	Super::Tick( DeltaTime );
-
-}
+//void ABitPawn::Tick( float DeltaTime )
+//{
+//	Super::Tick( DeltaTime );
+//}
 
 // Called to bind functionality to input
 void ABitPawn::SetupPlayerInputComponent(class UInputComponent* InputComponent)
@@ -56,8 +53,9 @@ void ABitPawn::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 	// Bind Axis
 	InputComponent->BindAxis("MoveForward", this, &ABitPawn::MoveForward);
 	InputComponent->BindAxis("MoveRight", this, &ABitPawn::MoveRight);
-	InputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-	InputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+	InputComponent->BindAxis("MoveUp", this, &ABitPawn::MoveUp);
+	InputComponent->BindAxis("CameraPitch", this, &ABitPawn::CameraPitch);
+	InputComponent->BindAxis("CameraYaw", this, &ABitPawn::CameraYaw);
 }
 
 void ABitPawn::PlaceBomb()
@@ -73,10 +71,10 @@ void ABitPawn::DetonateBomb()
 void ABitPawn::MoveForward(float Value)
 {	
 	if (Value != 0.0f)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Green, FString::Printf(TEXT("MoveForward: %f"), Value));
-		// add movement in that direction
-		AddMovementInput(GetActorForwardVector(), Value);
+	{		
+		FVector NewLocation = GetActorLocation();
+		NewLocation += GetActorForwardVector() * Value * MoveSense; // FMath::Clamp<float>(Value, -1.0f, 1.0f);;
+		SetActorLocation(NewLocation);
 	}
 }
 
@@ -84,8 +82,39 @@ void ABitPawn::MoveRight(float Value)
 {
 	if (Value != 0.0f)
 	{
-		// add movement in that direction
-		AddMovementInput(GetActorRightVector(), Value);
+		FVector NewLocation = GetActorLocation();
+		NewLocation += GetActorRightVector() * Value * MoveSense; // FMath::Clamp<float>(Value, -1.0f, 1.0f);
+		SetActorLocation(NewLocation);
+	}
+}
+
+void ABitPawn::MoveUp(float Value)
+{
+	if (Value != 0.0f)
+	{
+		FVector NewLocation = GetActorLocation();
+		NewLocation += GetActorUpVector() * Value * MoveSense; // FMath::Clamp<float>(Value, -1.0f, 1.0f);
+		SetActorLocation(NewLocation);
+	}
+}
+
+void ABitPawn::CameraPitch(float Value)
+{
+	if (Value != 0.0f)
+	{		
+		FRotator NewRotation = GetActorRotation();
+		NewRotation.Pitch += Value * RotationSense;
+		SetActorRotation(NewRotation);
+	}
+}
+
+void ABitPawn::CameraYaw(float Value)
+{
+	if (Value != 0.0f)
+	{
+		FRotator NewRotation = GetActorRotation();
+		NewRotation.Yaw += Value * RotationSense; // FMath::Clamp<float>(Value, -1.0f, 1.0f) * ControlSense;
+		SetActorRotation(NewRotation);
 	}
 }
 
