@@ -2,20 +2,42 @@
 
 #include "BombIt.h"
 #include "BitPawn.h"
+#include "BitPlayerController.h"
+#include "BitBomb.h"
 
 
 // Sets default values
 ABitPawn::ABitPawn()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(RootComponent);
 	Camera->bUsePawnControlRotation = false; // since we are rotating our actor by ourselves
 
+
+	// default bomb to spawn
+	static ConstructorHelpers::FClassFinder<ABitBomb> DefaultBombToSpawnBP(TEXT("/Game/Blueprints/Bomb_BP"));
+	if (DefaultBombToSpawnBP.Class != NULL)
+	{
+		DefaultBombToSpawn = DefaultBombToSpawnBP.Class;
+	}
+
 	RotationSense = 1.f;
 	MoveSense = 1.f;
+
+
+	// Create a decal in the world to show the cursor's location
+	CursorToWorld = CreateDefaultSubobject<UDecalComponent>("CursorToWorld");
+	CursorToWorld->SetupAttachment(RootComponent);
+	static ConstructorHelpers::FObjectFinder<UMaterial> DecalMaterialAsset(TEXT("/Game/Materials/M_Cursor_Decal"));
+	if (DecalMaterialAsset.Succeeded())
+	{
+		CursorToWorld->SetDecalMaterial(DecalMaterialAsset.Object);
+	}
+	CursorToWorld->DecalSize = FVector(16.0f, 32.0f, 32.0f);
+	CursorToWorld->SetRelativeRotation(FRotator(90.0f, 0.0f, 0.0f).Quaternion());
 }
 
 
@@ -28,15 +50,27 @@ void ABitPawn::PostInitializeComponents()
 // Called when the game starts or when spawned
 void ABitPawn::BeginPlay()
 {
-	Super::BeginPlay();
-	
+	Super::BeginPlay();	
 }
 
 // Called every frame
-//void ABitPawn::Tick( float DeltaTime )
-//{
-//	Super::Tick( DeltaTime );
-//}
+void ABitPawn::Tick( float DeltaTime )
+{
+	Super::Tick( DeltaTime );
+
+	if (CursorToWorld != nullptr)
+	{
+		if (ABitPlayerController* PC = Cast<ABitPlayerController>(GetController()))
+		{
+			FHitResult TraceHitResult;
+			PC->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
+			FVector CursorFV = TraceHitResult.ImpactNormal;
+			FRotator CursorR = CursorFV.Rotation();
+			CursorToWorld->SetWorldLocation(TraceHitResult.Location);
+			CursorToWorld->SetWorldRotation(CursorR);
+		}
+	}
+}
 
 // Called to bind functionality to input
 void ABitPawn::SetupPlayerInputComponent(class UInputComponent* InputComponent)
@@ -44,11 +78,12 @@ void ABitPawn::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 	Super::SetupPlayerInputComponent(InputComponent);
 
 	// Set up gameplay key bindings
-	check(InputComponent);
-			
+	check(InputComponent);	
+
 	// Bind Actions
-	InputComponent->BindAction("PlaceBomb", IE_Pressed, this, &ABitPawn::PlaceBomb);
-	InputComponent->BindAction("DetonateBomb", IE_Pressed, this, &ABitPawn::DetonateBomb);
+	InputComponent->BindAction("PlaceBomb", IE_Released, this, &ABitPawn::PlaceBomb);
+	InputComponent->BindAction("DetonateBomb", IE_Released, this, &ABitPawn::DetonateBomb);
+	InputComponent->BindAction("SelectBomb", IE_Pressed, this, &ABitPawn::SelectBomb);
 
 	// Bind Axis
 	InputComponent->BindAxis("MoveForward", this, &ABitPawn::MoveForward);
@@ -61,11 +96,46 @@ void ABitPawn::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 void ABitPawn::PlaceBomb()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Blue, FString::Printf(TEXT("PlaceBomb!!!")));
+
+	ABitPlayerController* MyPC = Cast<ABitPlayerController>(GetController());
+	if (MyPC)
+	{
+		// Trace to see what is under the mouse cursor
+		FHitResult Hit;
+		MyPC->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
+
+		if (Hit.bBlockingHit)
+		{
+			// We hit something, spawn bomb there
+			if (DefaultBombToSpawn)
+			{
+				CurrentSelectedBomb = GetWorld()->SpawnActor<ABitBomb>(DefaultBombToSpawn, Hit.ImpactPoint, FRotator::ZeroRotator);
+			}
+
+		}
+	}
+	
 }
 
 void ABitPawn::DetonateBomb()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Red, FString::Printf(TEXT("DetonateBomb!!!")));
+}
+
+void ABitPawn::SelectBomb()
+{
+	ABitPlayerController* MyPC = Cast<ABitPlayerController>(GetController());
+	if (MyPC)
+	{
+		// Trace to see what is under the mouse cursor
+		FHitResult Hit;
+		MyPC->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
+
+		if (Hit.bBlockingHit)
+		{			
+			GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Blue, FString::Printf(TEXT("Found something!!!")));
+		}
+	}
 }
 
 void ABitPawn::MoveForward(float Value)

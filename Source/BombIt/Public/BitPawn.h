@@ -19,6 +19,16 @@ class BOMBIT_API ABitPawn : public APawn
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = MovementSettings, meta = (AllowPrivateAccess = "true"))
 	float MoveSense;
 
+	/** A decal that projects to the cursor location. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	class UDecalComponent* CursorToWorld;
+
+	/** default bomb to spawn */
+	UPROPERTY(EditDefaultsOnly, Category = BombSettings)
+	TSubclassOf<class ABitBomb>  DefaultBombToSpawn;
+
+	class ABitBomb* CurrentSelectedBomb;
+
 public:
 	// Sets default values for this pawn's properties
 	ABitPawn();
@@ -30,7 +40,7 @@ public:
 	virtual void BeginPlay() override;
 
 	// Called every frame
-	//virtual void Tick(float DeltaSeconds) override;
+	virtual void Tick(float DeltaSeconds) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
@@ -42,6 +52,7 @@ public:
 	// actions
 	void PlaceBomb();
 	void DetonateBomb();
+	void SelectBomb();
 
 	// axis
 	void MoveForward(float Value);
@@ -49,6 +60,9 @@ public:
 	void MoveUp(float Value);
 	void CameraPitch(float Value);
 	void CameraYaw(float Value);
+
+	/** Returns CursorToWorld subobject **/
+	FORCEINLINE class UDecalComponent* GetCursorToWorld() { return CursorToWorld; }
 
 private:
 	void LookAtTarget(const AActor &Target);

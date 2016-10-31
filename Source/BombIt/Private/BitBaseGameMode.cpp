@@ -5,15 +5,16 @@
 #include "BitGameState.h"
 #include "BitPawn.h"
 #include "BitHUD.h"
+#include "BitPlayerController.h"
 
 ABitBaseGameMode::ABitBaseGameMode(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	/* Assign the class types used by this gamemode */	
 	DefaultPawnClass = ABitPawn::StaticClass();
-	HUDClass = ABitHUD::StaticClass();
+	//HUDClass = ABitHUD::StaticClass();
 	GameStateClass = ABitGameState::StaticClass();
-	/*PlayerControllerClass = AHeliPlayerController::StaticClass();
-	PlayerStateClass = AHeliPlayerState::StaticClass(); */
+	PlayerControllerClass = ABitPlayerController::StaticClass();
+	//PlayerStateClass = AHeliPlayerState::StaticClass();
 	
 	WarmupTime = 0;
 	RoundTime = 0;
