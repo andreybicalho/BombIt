@@ -4,3 +4,5 @@
 
 #include "Engine.h"
 
+#define SHOCKWAVE	ECC_GameTraceChannel1
+

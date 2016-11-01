@@ -10,21 +10,21 @@ class BOMBIT_API ABitPawn : public APawn
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* Camera;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = MovementSettings, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, Category = MovementSettings, meta = (AllowPrivateAccess = "true"))
 	float RotationSense;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = MovementSettings, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, Category = MovementSettings, meta = (AllowPrivateAccess = "true"))
 	float MoveSense;
 
 	/** A decal that projects to the cursor location. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UDecalComponent* CursorToWorld;
 
 	/** default bomb to spawn */
-	UPROPERTY(EditDefaultsOnly, Category = BombSettings)
+	UPROPERTY(EditDefaultsOnly, Category = BombSettings, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class ABitBomb>  DefaultBombToSpawn;
 
 	class ABitBomb* CurrentSelectedBomb;

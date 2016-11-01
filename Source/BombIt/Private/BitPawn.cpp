@@ -18,7 +18,7 @@ ABitPawn::ABitPawn()
 
 
 	// default bomb to spawn
-	static ConstructorHelpers::FClassFinder<ABitBomb> DefaultBombToSpawnBP(TEXT("/Game/Blueprints/Bomb_BP"));
+	static ConstructorHelpers::FClassFinder<ABitBomb> DefaultBombToSpawnBP(TEXT("/Game/Blueprints/Bombs/Bomb_BP"));
 	if (DefaultBombToSpawnBP.Class != NULL)
 	{
 		DefaultBombToSpawn = DefaultBombToSpawnBP.Class;
@@ -119,7 +119,10 @@ void ABitPawn::PlaceBomb()
 
 void ABitPawn::DetonateBomb()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Red, FString::Printf(TEXT("DetonateBomb!!!")));
+	if (CurrentSelectedBomb)
+	{
+		CurrentSelectedBomb->Explode();
+	}
 }
 
 void ABitPawn::SelectBomb()
@@ -143,7 +146,7 @@ void ABitPawn::MoveForward(float Value)
 	if (Value != 0.0f)
 	{		
 		FVector NewLocation = GetActorLocation();
-		NewLocation += GetActorForwardVector() * Value * MoveSense; // FMath::Clamp<float>(Value, -1.0f, 1.0f);;
+		NewLocation += GetActorForwardVector() * Value * MoveSense; // FMath::Clamp<float>(Value, -1.0f, 1.0f);
 		SetActorLocation(NewLocation);
 	}
 }
