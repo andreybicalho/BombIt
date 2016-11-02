@@ -9,6 +9,9 @@ UCLASS()
 class BOMBIT_API ABitBomb : public AActor
 {
 	GENERATED_BODY()
+	
+	UPROPERTY(Category = RootSceneCompSettings, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+	class USceneComponent* RootSceneComp;
 
 	UPROPERTY(Category = MeshSettings, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* BombMesh;
@@ -39,6 +42,7 @@ class BOMBIT_API ABitBomb : public AActor
 	FScriptDelegate OnBeginOverlapShockwaveDelegate;
 
 	// callback function for the OnBeginOverlap
+	UFUNCTION()
 	void ShockwaveOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep);
 
 	UPROPERTY(EditDefaultsOnly, Category = ShockwaveSettings, meta = (AllowPrivateAccess = "true"))
@@ -48,6 +52,12 @@ class BOMBIT_API ABitBomb : public AActor
 	
 	UFUNCTION()
 	void IncreaseShockwaveRadiusTimeLineCallback(float Value);
+
+	UFUNCTION()
+	void ShockwaveIncreasingFinished();
+
+	// whether the shockwave is still increasing (exploding)
+	bool bIsActivated;
 	
 public:	
 	// Sets default values for this actor's properties

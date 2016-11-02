@@ -10,26 +10,36 @@ ABitBomb::ABitBomb()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	BombMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BombMesh"));
-	RootComponent = BombMesh;
+	RootSceneComp = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComp"));
+	RootComponent = RootSceneComp;
 
 	ShockwaveCollision = CreateDefaultSubobject<USphereComponent>(TEXT("ShockwaveCollision"));
 	ShockwaveCollision->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	ShockwaveCollision->InitSphereRadius(0.5f);
-	// shockwave collision settings
-	ShockwaveCollision->SetCollisionProfileName("ShockwaveCollisionProfile");
-	// since we have a profile we don't need to customize it like below:
-	//ShockwaveCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	//ShockwaveCollision->SetCollisionObjectType(SHOCKWAVE);
-	//
-	ShockwaveCollision->SetNotifyRigidBodyCollision(false);
+	// shockwave collision settings	
+	ShockwaveCollision->SetCollisionProfileName("ShockwaveCollisionProfileOverlap");
+	ShockwaveCollision->SetSimulatePhysics(false);
+	ShockwaveCollision->SetNotifyRigidBodyCollision(false); // we don't want "Simulation Generates Hit Events" on
+	// binding OnBeginOverlap callback function
 	ShockwaveCollision->bGenerateOverlapEvents = true;
 	OnBeginOverlapShockwaveDelegate.BindUFunction(this, "ShockwaveOverlap");
 	ShockwaveCollision->OnComponentBeginOverlap.Add(OnBeginOverlapShockwaveDelegate);
 
+	// since we have a profile we don't need to customize it like below:
+	/*ShockwaveCollision->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	ShockwaveCollision->SetCollisionObjectType(SHOCKWAVE);
+	ShockwaveCollision->SetCollisionResponseToAllChannels(ECR_Block);
+	ShockwaveCollision->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	ShockwaveCollision->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
+	ShockwaveCollision->SetCollisionResponseToChannel(SHOCKWAVE, ECR_Ignore);*/
+
 	ShockwaveMaxRadius = 500.f;
 	ShockwaveCurrentRadius = 0.5f;
 
+	BombMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BombMesh"));
+	BombMesh->AttachToComponent(ShockwaveCollision, FAttachmentTransformRules::KeepRelativeTransform);
+
+	bIsActivated = false;
 }
 
 /* setup initial variables */
@@ -46,6 +56,10 @@ void ABitBomb::PostInitializeComponents()
 
 		ShockwaveTimeline = FTimeline();
 		ShockwaveTimeline.AddInterpFloat(ShockwaveSpeedCurve, InterpFloatFunction, "InterpFloatFunction");
+
+		FOnTimelineEventStatic TimelineFinishedFunction = FOnTimelineEventStatic();
+		TimelineFinishedFunction.BindUFunction(this, "ShockwaveIncreasingFinished");
+		ShockwaveTimeline.SetTimelineFinishedFunc(TimelineFinishedFunction);
 	}
 }
 
@@ -70,6 +84,13 @@ void ABitBomb::Tick( float DeltaTime )
 
 void ABitBomb::Explode()
 {
+	if (bIsActivated)
+	{
+		return;
+	}
+	
+	bIsActivated = true;
+
 	// shockwave
 	ShockwaveTimeline.PlayFromStart();
 
@@ -84,7 +105,7 @@ void ABitBomb::Explode()
 
 void ABitBomb::ShockwaveOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Red, FString::Printf(TEXT("ShockwaveOverlap")));
+	GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Green, FString::Printf(TEXT("ShockwaveOverlap")));
 }
 
 void ABitBomb::IncreaseShockwaveRadiusTimeLineCallback(float Value)
@@ -94,5 +115,14 @@ void ABitBomb::IncreaseShockwaveRadiusTimeLineCallback(float Value)
 	ShockwaveCollision->SetSphereRadius(ShockwaveRadius, true);
 
 	// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Shockwave: timeline: %f  value: %f  ShockwaveRadius: %f"), ShockwaveTimeline.GetPlaybackPosition(), Value, ShockwaveRadius));
+}
+
+void ABitBomb::ShockwaveIncreasingFinished()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Shockwave Increasing Finished!")));
+	
+	ShockwaveCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	Destroy();
 }
 

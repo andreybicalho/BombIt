@@ -110,6 +110,7 @@ void ABitPawn::PlaceBomb()
 			if (DefaultBombToSpawn)
 			{
 				CurrentSelectedBomb = GetWorld()->SpawnActor<ABitBomb>(DefaultBombToSpawn, Hit.ImpactPoint, FRotator::ZeroRotator);
+				// TODO: attach bomb there
 			}
 
 		}
