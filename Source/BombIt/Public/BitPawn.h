@@ -27,6 +27,7 @@ class BOMBIT_API ABitPawn : public APawn
 	UPROPERTY(EditDefaultsOnly, Category = BombSettings, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class ABitBomb>  DefaultBombToSpawn;
 
+	UPROPERTY()
 	class ABitBomb* CurrentSelectedBomb;
 
 public:

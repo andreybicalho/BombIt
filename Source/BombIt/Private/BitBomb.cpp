@@ -25,6 +25,8 @@ ABitBomb::ABitBomb()
 	OnBeginOverlapShockwaveDelegate.BindUFunction(this, "ShockwaveOverlap");
 	ShockwaveCollision->OnComponentBeginOverlap.Add(OnBeginOverlapShockwaveDelegate);
 
+	bUseInstantShockwave = false;
+
 	// since we have a profile we don't need to customize it like below:
 	/*ShockwaveCollision->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	ShockwaveCollision->SetCollisionObjectType(SHOCKWAVE);
@@ -37,9 +39,17 @@ ABitBomb::ABitBomb()
 	ShockwaveCurrentRadius = 0.5f;
 
 	BombMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BombMesh"));
-	BombMesh->AttachToComponent(ShockwaveCollision, FAttachmentTransformRules::KeepRelativeTransform);
+	BombMesh->AttachToComponent(RootSceneComp, FAttachmentTransformRules::KeepRelativeTransform);
 
-	bIsActivated = false;
+	bIsActivated = true;
+
+	// radial force
+	RadialForce = CreateDefaultSubobject<URadialForceComponent>(TEXT("RadialForce"));
+	RadialForce->AttachToComponent(RootSceneComp, FAttachmentTransformRules::KeepRelativeTransform);
+	RadialForce->Falloff = ERadialImpulseFalloff::RIF_Linear;
+	RadialForce->Radius = ShockwaveMaxRadius;
+	// RadialForce->ObjectTypesToAffect.RemoveAll();
+	// RadialForce->ObjectTypesToAffect.Add(EObjectTypeQuery)
 }
 
 /* setup initial variables */
@@ -52,14 +62,18 @@ void ABitBomb::PostInitializeComponents()
 	{
 		//Setup the timelinefunction
 		FOnTimelineFloat InterpFloatFunction = FOnTimelineFloat();
-		InterpFloatFunction.BindUFunction(this, "IncreaseShockwaveRadiusTimeLineCallback");
+		InterpFloatFunction.BindUFunction(this, "ShockwaveTick");
 
 		ShockwaveTimeline = FTimeline();
 		ShockwaveTimeline.AddInterpFloat(ShockwaveSpeedCurve, InterpFloatFunction, "InterpFloatFunction");
 
 		FOnTimelineEventStatic TimelineFinishedFunction = FOnTimelineEventStatic();
-		TimelineFinishedFunction.BindUFunction(this, "ShockwaveIncreasingFinished");
+		TimelineFinishedFunction.BindUFunction(this, "ShockwaveFinished");
 		ShockwaveTimeline.SetTimelineFinishedFunc(TimelineFinishedFunction);
+	}
+	else
+	{
+		bUseInstantShockwave = true;
 	}
 }
 
@@ -84,31 +98,54 @@ void ABitBomb::Tick( float DeltaTime )
 
 void ABitBomb::Explode()
 {
-	if (bIsActivated)
+	if (!bIsActivated)
 	{
 		return;
 	}
 	
-	bIsActivated = true;
-
-	// shockwave
-	ShockwaveTimeline.PlayFromStart();
-
+	bIsActivated = false;
 	
-	//UAudioComponent* AC = NULL;
+	BombMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BombMesh->SetHiddenInGame(true);
+	BombMesh->Activate(false);	
+	
+	
 	// play sound
 	if (ExplosionSound)
 	{
 		UGameplayStatics::SpawnSoundAttached(ExplosionSound, this->GetRootComponent());
 	}
+
+	// fx
+	if (ExplosionFX)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(this, ExplosionFX, GetActorLocation(), GetActorRotation());
+	}
+
+	// start shockwave
+	if (!bUseInstantShockwave)
+	{
+		ShockwaveTimeline.PlayFromStart();
+	}
+	else
+	{
+		ShockwaveCollision->SetSphereRadius(ShockwaveMaxRadius, true);
+		ShockwaveFinished();
+	}
 }
 
 void ABitBomb::ShockwaveOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Green, FString::Printf(TEXT("ShockwaveOverlap")));
+	GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Green, FString::Printf(TEXT("Shockwave has overlaped with something")));
+
+	ABitBomb* OtherBomb = Cast<ABitBomb>(OtherComp);
+	if (OtherBomb && OtherBomb != this && OtherBomb->isActivated())
+	{
+		OtherBomb->Explode();
+	}
 }
 
-void ABitBomb::IncreaseShockwaveRadiusTimeLineCallback(float Value)
+void ABitBomb::ShockwaveTick(float Value)
 {	
 	float ShockwaveRadius = Value * ShockwaveMaxRadius;
 
@@ -117,12 +154,20 @@ void ABitBomb::IncreaseShockwaveRadiusTimeLineCallback(float Value)
 	// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Shockwave: timeline: %f  value: %f  ShockwaveRadius: %f"), ShockwaveTimeline.GetPlaybackPosition(), Value, ShockwaveRadius));
 }
 
-void ABitBomb::ShockwaveIncreasingFinished()
+void ABitBomb::ShockwaveFinished()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Shockwave Increasing Finished!")));
 	
 	ShockwaveCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ShockwaveCollision->Activate(false);
+
+	// apply radial force
+	RadialForce->FireImpulse();
 	
 	Destroy();
 }
 
+bool ABitBomb::isActivated()
+{
+	return bIsActivated;
+}

@@ -30,6 +30,10 @@ class BOMBIT_API ABitBomb : public AActor
 	* Shockwave
 	*/
 
+	// if this is true shockwave will not be driven by the FTimeline
+	UPROPERTY(Category = ShockwaveSettings, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+	bool bUseInstantShockwave;
+
 	UPROPERTY(Category = ShockwaveSettings, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* ShockwaveCollision;
 
@@ -50,14 +54,22 @@ class BOMBIT_API ABitBomb : public AActor
 
 	FTimeline ShockwaveTimeline;	
 	
+	// callback function for the FTimeline tick
 	UFUNCTION()
-	void IncreaseShockwaveRadiusTimeLineCallback(float Value);
+	void ShockwaveTick(float Value);
 
 	UFUNCTION()
-	void ShockwaveIncreasingFinished();
+	void ShockwaveFinished();
 
-	// whether the shockwave is still increasing (exploding)
+	// whether the bomb can explode
 	bool bIsActivated;
+
+	/* 
+	*	Radial Force
+	*/
+
+	UPROPERTY(EditDefaultsOnly, Category = RadialForceSettings, meta = (AllowPrivateAccess = "true"))
+	class URadialForceComponent* RadialForce;
 	
 public:	
 	// Sets default values for this actor's properties
@@ -73,5 +85,7 @@ public:
 	virtual void Tick( float DeltaSeconds ) override;
 
 	void Explode();
+
+	bool isActivated();
 	
 };
