@@ -61,6 +61,8 @@ public:
 	void MoveUp(float Value);
 	void CameraPitch(float Value);
 	void CameraYaw(float Value);
+	//
+	void SetBombRadius(float Value);
 
 	/** Returns CursorToWorld subobject **/
 	FORCEINLINE class UDecalComponent* GetCursorToWorld() { return CursorToWorld; }

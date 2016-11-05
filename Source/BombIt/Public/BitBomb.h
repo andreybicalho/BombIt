@@ -27,15 +27,15 @@ class BOMBIT_API ABitBomb : public AActor
 	UParticleSystem* ExplosionFX;
 
 	/*
-	* Shockwave
-	*/
-
+	* Shockwave collision trigger
+	*/	
+	
 	// if this is true shockwave will not be driven by the FTimeline
 	UPROPERTY(Category = ShockwaveSettings, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
 	bool bUseInstantShockwave;
 
 	UPROPERTY(Category = ShockwaveSettings, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-	class USphereComponent* ShockwaveCollision;
+	class USphereComponent* ShockwaveCollisionTrigger;
 
 	UPROPERTY(EditDefaultsOnly, Category = ShockwaveSettings, meta = (AllowPrivateAccess = "true"))
 	float ShockwaveMaxRadius;
@@ -64,11 +64,44 @@ class BOMBIT_API ABitBomb : public AActor
 	// whether the bomb can explode
 	bool bIsActivated;
 
+	/*
+	* Shockwave range display
+	*/
+
+	UPROPERTY(Category = ShockwaveRangeDisplaySettings, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+	class UStaticMeshComponent* ShockwaveRangeDisplay;
+
+	// delegates for OnBeginOverlap and OnEndOverlap events for the ShockwaveRangeDisplay
+	FScriptDelegate OnBeginOverlapShockwaveRangeDisplayDelegate;
+	FScriptDelegate OnEndOverlapShockwaveRangeDisplayDelegate;
+
+	UFUNCTION()
+	void ShockwaveRangeDisplayBeginOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep);
+
+	UFUNCTION()
+	void ShockwaveRangeDisplayEndOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UPROPERTY(Category = ShockwaveRangeDisplaySettings, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+	class UMaterialInstance* ShockwaveCollidedMaterial;
+
+	UPROPERTY(Category = ShockwaveRangeDisplaySettings, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+	class UMaterialInstance* ShockwaveNotCollidedMaterial;
+
+
+	UPROPERTY(EditDefaultsOnly, Category = ShockwaveRangeDisplaySettings, meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* ShockwaveDisplaySpeedCurve;
+
+	FTimeline ShockwaveDisplayTimeline;
+
+	UFUNCTION()
+	void ShockwaveDisplayTick(float Value);
+	
+
 	/* 
 	*	Radial Force
 	*/
 
-	UPROPERTY(EditDefaultsOnly, Category = RadialForceSettings, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, Category = ShockwaveSettings, meta = (AllowPrivateAccess = "true"))
 	class URadialForceComponent* RadialForce;
 	
 public:	
@@ -87,5 +120,9 @@ public:
 	void Explode();
 
 	bool isActivated();
+
+	void BombInRange();
+
+	void SetShockwaveRadius(float Radius);
 	
 };

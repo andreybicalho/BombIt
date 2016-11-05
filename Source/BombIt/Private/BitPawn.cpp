@@ -91,12 +91,13 @@ void ABitPawn::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 	InputComponent->BindAxis("MoveUp", this, &ABitPawn::MoveUp);
 	InputComponent->BindAxis("CameraPitch", this, &ABitPawn::CameraPitch);
 	InputComponent->BindAxis("CameraYaw", this, &ABitPawn::CameraYaw);
+	//
+	InputComponent->BindAxis("SetBombRadius", this, &ABitPawn::SetBombRadius);
+
 }
 
 void ABitPawn::PlaceBomb()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Blue, FString::Printf(TEXT("PlaceBomb!!!")));
-
 	ABitPlayerController* MyPC = Cast<ABitPlayerController>(GetController());
 	if (MyPC)
 	{
@@ -114,8 +115,15 @@ void ABitPawn::PlaceBomb()
 			}
 
 		}
+	}	
+}
+
+void ABitPawn::SetBombRadius(float Value)
+{
+	if (CurrentSelectedBomb)
+	{
+		CurrentSelectedBomb->SetShockwaveRadius(Value);
 	}
-	
 }
 
 void ABitPawn::DetonateBomb()
