@@ -27,7 +27,7 @@ class BOMBIT_API ABitBomb : public AActor
 	UParticleSystem* ExplosionFX;
 
 	/*
-	* Shockwave Overlap
+	* Shockwave
 	*/	
 	
 	// if this is true shockwave will not be driven by the FTimeline
@@ -41,13 +41,6 @@ class BOMBIT_API ABitBomb : public AActor
 	float ShockwaveMaxRadius;
 
 	float ShockwaveCurrentRadius;
-
-	// delegates for OnBeginOverlap event
-	FScriptDelegate OnBeginOverlapShockwaveDelegate;
-
-	// callback function for the OnBeginOverlap
-	UFUNCTION()
-	void ShockwaveOnBeginOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep);
 
 	UPROPERTY(EditDefaultsOnly, Category = ShockwaveSettings, meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* ShockwaveSpeedCurve;

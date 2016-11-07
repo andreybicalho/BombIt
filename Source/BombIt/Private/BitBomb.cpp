@@ -24,10 +24,6 @@ ABitBomb::ABitBomb()
 	ShockwaveCollisionTrigger->SetCollisionProfileName("ShockwaveCollisionProfileOverlap");
 	ShockwaveCollisionTrigger->SetSimulatePhysics(false);
 	ShockwaveCollisionTrigger->SetNotifyRigidBodyCollision(false); // we don't want "Simulation Generates Hit Events" on
-	// binding OnBeginOverlap callback function
-	/*ShockwaveCollisionTrigger->bGenerateOverlapEvents = true;
-	OnBeginOverlapShockwaveDelegate.BindUFunction(this, "ShockwaveOnBeginOverlap");
-	ShockwaveCollisionTrigger->OnComponentBeginOverlap.Add(OnBeginOverlapShockwaveDelegate);*/
 
 	bUseInstantShockwave = false;
 
@@ -41,12 +37,12 @@ ABitBomb::ABitBomb()
 	ShockwaveRangeDisplay->SetRelativeScale3D(FVector(ShockwaveDisplayInitialSize, ShockwaveDisplayInitialSize, ShockwaveDisplayInitialSize));
 	
 	//
-	/*ShockwaveRangeDisplay->bGenerateOverlapEvents = true;
+	ShockwaveRangeDisplay->bGenerateOverlapEvents = true;
 	OnBeginOverlapShockwaveRangeDisplayDelegate.BindUFunction(this, "ShockwaveRangeDisplayBeginOverlap");
 	ShockwaveRangeDisplay->OnComponentBeginOverlap.Add(OnBeginOverlapShockwaveRangeDisplayDelegate);
 	//
 	OnEndOverlapShockwaveRangeDisplayDelegate.BindUFunction(this, "ShockwaveRangeDisplayEndOverlap");
-	ShockwaveRangeDisplay->OnComponentEndOverlap.Add(OnEndOverlapShockwaveRangeDisplayDelegate);*/
+	ShockwaveRangeDisplay->OnComponentEndOverlap.Add(OnEndOverlapShockwaveRangeDisplayDelegate);
 
 	bIsActivated = true;
 
@@ -183,19 +179,8 @@ void ABitBomb::Explode()
 }
 
 /*
-* Shockwave Overlap
+* Shockwave
 */
-
-void ABitBomb::ShockwaveOnBeginOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep)
-{
-	//GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Yellow, FString::Printf(TEXT("ShockwaveOverlap")));
-
-	/*ABitBomb* OtherBomb = Cast<ABitBomb>(OtherComp);
-	if (OtherBomb && OtherBomb != this && OtherBomb->isActivated())
-	{
-		OtherBomb->Explode();
-	}*/
-}
 
 void ABitBomb::ShockwaveTimelineFinished()
 {
