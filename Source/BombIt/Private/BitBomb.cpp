@@ -13,7 +13,7 @@ ABitBomb::ABitBomb()
 	RootSceneComp = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComp"));
 	RootComponent = RootSceneComp;
 
-
+	// Shockwave default settings
 	ShockwaveMaxRadius = 500.f;
 	ShockwaveCurrentRadius = 0.1f;
 
@@ -25,21 +25,13 @@ ABitBomb::ABitBomb()
 	ShockwaveCollisionTrigger->SetSimulatePhysics(false);
 	ShockwaveCollisionTrigger->SetNotifyRigidBodyCollision(false); // we don't want "Simulation Generates Hit Events" on
 	// binding OnBeginOverlap callback function
-	ShockwaveCollisionTrigger->bGenerateOverlapEvents = true;
-	OnBeginOverlapShockwaveDelegate.BindUFunction(this, "ShockwaveOverlap");
-	ShockwaveCollisionTrigger->OnComponentBeginOverlap.Add(OnBeginOverlapShockwaveDelegate);
+	/*ShockwaveCollisionTrigger->bGenerateOverlapEvents = true;
+	OnBeginOverlapShockwaveDelegate.BindUFunction(this, "ShockwaveOnBeginOverlap");
+	ShockwaveCollisionTrigger->OnComponentBeginOverlap.Add(OnBeginOverlapShockwaveDelegate);*/
 
 	bUseInstantShockwave = false;
 
-	// since we have a profile we don't need to customize it like below:
-	/*ShockwaveCollisionTrigger->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	ShockwaveCollisionTrigger->SetCollisionObjectType(SHOCKWAVE);
-	ShockwaveCollisionTrigger->SetCollisionResponseToAllChannels(ECR_Block);
-	ShockwaveCollisionTrigger->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-	ShockwaveCollisionTrigger->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
-	ShockwaveCollisionTrigger->SetCollisionResponseToChannel(SHOCKWAVE, ECR_Ignore);*/
-
-	// shockwave range display
+	// shockwave range display default settings
 	ShockwaveRangeDisplay = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ShockwaveRangeDisplay"));
 	ShockwaveRangeDisplay->AttachToComponent(ShockwaveCollisionTrigger, FAttachmentTransformRules::KeepRelativeTransform);
 	ShockwaveRangeDisplay->SetCollisionProfileName("ShockwaveRangeDisplay");
@@ -51,25 +43,28 @@ ABitBomb::ABitBomb()
 	//
 	/*ShockwaveRangeDisplay->bGenerateOverlapEvents = true;
 	OnBeginOverlapShockwaveRangeDisplayDelegate.BindUFunction(this, "ShockwaveRangeDisplayBeginOverlap");
-	ShockwaveRangeDisplay->OnComponentBeginOverlap.Add(OnBeginOverlapShockwaveRangeDisplayDelegate);*/
+	ShockwaveRangeDisplay->OnComponentBeginOverlap.Add(OnBeginOverlapShockwaveRangeDisplayDelegate);
 	//
 	OnEndOverlapShockwaveRangeDisplayDelegate.BindUFunction(this, "ShockwaveRangeDisplayEndOverlap");
-	ShockwaveRangeDisplay->OnComponentEndOverlap.Add(OnEndOverlapShockwaveRangeDisplayDelegate);
+	ShockwaveRangeDisplay->OnComponentEndOverlap.Add(OnEndOverlapShockwaveRangeDisplayDelegate);*/
 
+	bIsActivated = true;
 
-	// Main Mesh
+	// Bomb Mesh default settings
 	BombMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BombMesh"));
 	BombMesh->AttachToComponent(RootSceneComp, FAttachmentTransformRules::KeepRelativeTransform);
 	BombMesh->SetCollisionProfileName("BombeMeshCollisionProfile");
 	BombMesh->bGenerateOverlapEvents = true;
 	//
-	ShockwaveRangeDisplay->bGenerateOverlapEvents = true;
-	OnBeginOverlapShockwaveRangeDisplayDelegate.BindUFunction(this, "ShockwaveRangeDisplayBeginOverlap");
-	BombMesh->OnComponentBeginOverlap.Add(OnBeginOverlapShockwaveRangeDisplayDelegate);
+	OnBeginOverlapBombMeshDelegate.BindUFunction(this, "BombMeshOnBeginOverlap");
+	BombMesh->OnComponentBeginOverlap.Add(OnBeginOverlapBombMeshDelegate);
 
-	bIsActivated = true;
+	OnEndOverlapBombMeshDelegate.BindUFunction(this, "BombMeshOnEndOverlap");
+	BombMesh->OnComponentEndOverlap.Add(OnEndOverlapBombMeshDelegate);
 
-	// radial force
+
+
+	// radial force default settings
 	RadialForce = CreateDefaultSubobject<URadialForceComponent>(TEXT("RadialForce"));
 	RadialForce->AttachToComponent(RootSceneComp, FAttachmentTransformRules::KeepRelativeTransform);
 	RadialForce->Falloff = ERadialImpulseFalloff::RIF_Linear;
@@ -94,7 +89,7 @@ void ABitBomb::PostInitializeComponents()
 		ShockwaveTimeline.AddInterpFloat(ShockwaveSpeedCurve, InterpFloatFunction, "InterpFloatFunction");
 
 		FOnTimelineEventStatic TimelineFinishedFunction = FOnTimelineEventStatic();
-		TimelineFinishedFunction.BindUFunction(this, "ShockwaveFinished");
+		TimelineFinishedFunction.BindUFunction(this, "ShockwaveTimelineFinished");
 		ShockwaveTimeline.SetTimelineFinishedFunc(TimelineFinishedFunction);
 	}
 	else
@@ -143,6 +138,7 @@ void ABitBomb::Tick( float DeltaTime )
 
 }
 
+
 void ABitBomb::Explode()
 {
 	if (!bIsActivated)
@@ -182,19 +178,36 @@ void ABitBomb::Explode()
 	else
 	{
 		ShockwaveCollisionTrigger->SetSphereRadius(ShockwaveMaxRadius, true);
-		ShockwaveFinished();
+		ShockwaveTimelineFinished();
 	}
 }
 
-void ABitBomb::ShockwaveOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep)
+/*
+* Shockwave Overlap
+*/
+
+void ABitBomb::ShockwaveOnBeginOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep)
 {
 	//GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Yellow, FString::Printf(TEXT("ShockwaveOverlap")));
 
-	ABitBomb* OtherBomb = Cast<ABitBomb>(OtherComp);
+	/*ABitBomb* OtherBomb = Cast<ABitBomb>(OtherComp);
 	if (OtherBomb && OtherBomb != this && OtherBomb->isActivated())
 	{
 		OtherBomb->Explode();
-	}
+	}*/
+}
+
+void ABitBomb::ShockwaveTimelineFinished()
+{
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Black, FString::Printf(TEXT("ShockwaveTimelineFinished")));
+
+	ShockwaveCollisionTrigger->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ShockwaveCollisionTrigger->Activate(false);
+
+	// apply radial force
+	RadialForce->FireImpulse();
+
+	Destroy();
 }
 
 void ABitBomb::ShockwaveTick(float Value)
@@ -206,23 +219,14 @@ void ABitBomb::ShockwaveTick(float Value)
 	// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Shockwave: timeline: %f  value: %f  ShockwaveRadius: %f"), ShockwaveTimeline.GetPlaybackPosition(), Value, ShockwaveRadius));
 }
 
-void ABitBomb::ShockwaveFinished()
-{
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Black, FString::Printf(TEXT("ShockwaveFinished")));
-	
-	ShockwaveCollisionTrigger->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	ShockwaveCollisionTrigger->Activate(false);	
-
-	// apply radial force
-	RadialForce->FireImpulse();
-	
-	Destroy();
-}
-
 bool ABitBomb::isActivated()
 {
 	return bIsActivated;
 }
+
+/*
+* Shockwave Range Display Overlap
+*/
 
 void ABitBomb::ShockwaveRangeDisplayBeginOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep)
 {	
@@ -230,13 +234,11 @@ void ABitBomb::ShockwaveRangeDisplayBeginOverlap(AActor* OtherActor, UPrimitiveC
 
 	ABitBomb* OtherBomb = Cast<ABitBomb>(OtherComp);
 	if (OtherBomb && OtherBomb != this && OtherBomb->isActivated())
-	{
-		OtherBomb->BombInRange();
-
-		/*if (ShockwaveCollidedMaterial)
+	{		
+		if (ShockwaveCollidedMaterial && ShockwaveRangeDisplay->GetMaterial(0) != ShockwaveCollidedMaterial)
 		{
 			ShockwaveRangeDisplay->SetMaterial(0, ShockwaveCollidedMaterial);
-		}*/
+		}
 	}	
 }
 
@@ -252,14 +254,12 @@ void ABitBomb::ShockwaveRangeDisplayEndOverlap(AActor* OtherActor, UPrimitiveCom
 			TArray<AActor*> OverlapingBombs;
 			ShockwaveRangeDisplay->GetOverlappingActors(OverlapingBombs, ABitBomb::StaticClass());
 
-			if (OverlapingBombs.Num() <= 1 && ShockwaveCollidedMaterial)
+			if (OverlapingBombs.Num() <= 1 && ShockwaveNotCollidedMaterial)
 			{
 				ShockwaveRangeDisplay->SetMaterial(0, ShockwaveNotCollidedMaterial);
 			}
 		}
 	}
-
-
 }
 
 void ABitBomb::ShockwaveDisplayTick(float Value)
@@ -271,13 +271,52 @@ void ABitBomb::ShockwaveDisplayTick(float Value)
 	ShockwaveRangeDisplay->SetRelativeScale3D(FVector(ShockwaveDisplayRadius, ShockwaveDisplayRadius, ShockwaveDisplayRadius));
 }
 
-void ABitBomb::BombInRange()
-{
-	if (ShockwaveCollidedMaterial)
+
+/*
+* BombMesh Overlap
+*/
+
+void ABitBomb::BombMeshOnBeginOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep)
+{	
+	ABitBomb* OtherBomb = Cast<ABitBomb>(OtherComp);
+	if (OtherBomb && OtherBomb != this)
 	{
-		ShockwaveRangeDisplay->SetMaterial(0, ShockwaveCollidedMaterial);
+		if (OtherBomb->isActivated())
+		{
+			if (BombMeshCollidedMaterial && BombMesh->GetMaterial(0) != BombMeshCollidedMaterial)
+			{
+				BombMesh->SetMaterial(0, BombMeshCollidedMaterial);
+			}
+		}
+		else
+		{
+			Explode();
+		}		
 	}
 }
+
+void ABitBomb::BombMeshOnEndOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	ABitBomb* OtherBomb = Cast<ABitBomb>(OtherComp);
+	if (OtherBomb && OtherBomb != this)
+	{
+		if (OtherBomb->isActivated())
+		{
+			TArray<AActor*> OverlapingBombs;
+			BombMesh->GetOverlappingActors(OverlapingBombs, ABitBomb::StaticClass());
+
+			if (OverlapingBombs.Num() <= 1 && BombMesNotCollidedMaterial && BombMesh->GetMaterial(0) != BombMesNotCollidedMaterial)
+			{
+				BombMesh->SetMaterial(0, BombMesNotCollidedMaterial);
+			}
+		}		
+	}
+}
+
+
+/*
+* Dev Helpers
+*/
 
 void ABitBomb::SetShockwaveRadius(float Radius)
 {
@@ -288,9 +327,6 @@ void ABitBomb::SetShockwaveRadius(float Radius)
 	float NewShockwaveRadius = Radius + ShockwaveCollisionTrigger->GetScaledSphereRadius();
 
 	ShockwaveMaxRadius = ShockwaveMaxRadius + Radius;
-	
-	ShockwaveCollisionTrigger->SetSphereRadius(NewShockwaveRadius, true);	
+
+	ShockwaveCollisionTrigger->SetSphereRadius(NewShockwaveRadius, true);
 }
-
-
-

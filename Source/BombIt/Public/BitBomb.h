@@ -27,7 +27,7 @@ class BOMBIT_API ABitBomb : public AActor
 	UParticleSystem* ExplosionFX;
 
 	/*
-	* Shockwave collision trigger
+	* Shockwave Overlap
 	*/	
 	
 	// if this is true shockwave will not be driven by the FTimeline
@@ -47,7 +47,7 @@ class BOMBIT_API ABitBomb : public AActor
 
 	// callback function for the OnBeginOverlap
 	UFUNCTION()
-	void ShockwaveOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep);
+	void ShockwaveOnBeginOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep);
 
 	UPROPERTY(EditDefaultsOnly, Category = ShockwaveSettings, meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* ShockwaveSpeedCurve;
@@ -59,13 +59,13 @@ class BOMBIT_API ABitBomb : public AActor
 	void ShockwaveTick(float Value);
 
 	UFUNCTION()
-	void ShockwaveFinished();
+	void ShockwaveTimelineFinished();
 
 	// whether the bomb can explode
 	bool bIsActivated;
 
 	/*
-	* Shockwave range display
+	* Shockwave range display overlap
 	*/
 
 	UPROPERTY(Category = ShockwaveRangeDisplaySettings, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
@@ -97,13 +97,33 @@ class BOMBIT_API ABitBomb : public AActor
 	void ShockwaveDisplayTick(float Value);
 	
 
-	/* 
+	/*
+	* BombMesh Overlap
+	*/
+
+	UPROPERTY(Category = BombMeshSettings, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+	class UMaterialInstance* BombMeshCollidedMaterial;
+
+	UPROPERTY(Category = BombMeshSettings, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+	class UMaterialInstance* BombMesNotCollidedMaterial;
+
+	FScriptDelegate OnBeginOverlapBombMeshDelegate;
+	FScriptDelegate OnEndOverlapBombMeshDelegate;
+
+	UFUNCTION()
+	void BombMeshOnBeginOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep);
+
+	UFUNCTION()
+	void BombMeshOnEndOverlap(AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	
+
+	/*
 	*	Radial Force
 	*/
 
 	UPROPERTY(EditDefaultsOnly, Category = ShockwaveSettings, meta = (AllowPrivateAccess = "true"))
 	class URadialForceComponent* RadialForce;
-	
+
 public:	
 	// Sets default values for this actor's properties
 	ABitBomb();
@@ -121,7 +141,9 @@ public:
 
 	bool isActivated();
 
-	void BombInRange();
+	/*
+	* Dev Helpers
+	*/
 
 	void SetShockwaveRadius(float Radius);
 	

@@ -25,7 +25,7 @@ ABitPawn::ABitPawn()
 	}
 
 	RotationSense = 1.f;
-	MoveSense = 1.f;
+	MoveSense = 10.f;
 
 
 	// Create a decal in the world to show the cursor's location
