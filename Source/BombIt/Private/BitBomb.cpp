@@ -42,14 +42,12 @@ ABitBomb::ABitBomb()
 	ShockwaveRangeDisplay->OnComponentBeginOverlap.Add(OnBeginOverlapShockwaveRangeDisplayDelegate);
 	//
 	OnEndOverlapShockwaveRangeDisplayDelegate.BindUFunction(this, "ShockwaveRangeDisplayEndOverlap");
-	ShockwaveRangeDisplay->OnComponentEndOverlap.Add(OnEndOverlapShockwaveRangeDisplayDelegate);
-
-	bIsActivated = true;
+	ShockwaveRangeDisplay->OnComponentEndOverlap.Add(OnEndOverlapShockwaveRangeDisplayDelegate);	
 
 	// Bomb Mesh default settings
 	BombMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BombMesh"));
 	BombMesh->AttachToComponent(RootSceneComp, FAttachmentTransformRules::KeepRelativeTransform);
-	BombMesh->SetCollisionProfileName("BombeMeshCollisionProfile");
+	BombMesh->SetCollisionProfileName("BombMeshCollisionProfile");
 	BombMesh->bGenerateOverlapEvents = true;
 	//
 	OnBeginOverlapBombMeshDelegate.BindUFunction(this, "BombMeshOnBeginOverlap");
@@ -104,6 +102,10 @@ void ABitBomb::PostInitializeComponents()
 		ShockwaveDisplayTimeline = FTimeline();
 		ShockwaveDisplayTimeline.AddInterpFloat(ShockwaveDisplaySpeedCurve, InterpFloatFunction, "InterpFloatFunction");
 	}
+
+	bIsSelected = true;
+
+	bIsActivated = true;
 }
 
 // Called when the game starts or when spawned
@@ -220,7 +222,7 @@ void ABitBomb::ShockwaveRangeDisplayBeginOverlap(AActor* OtherActor, UPrimitiveC
 	ABitBomb* OtherBomb = Cast<ABitBomb>(OtherComp);
 	if (OtherBomb && OtherBomb != this && OtherBomb->isActivated())
 	{		
-		if (ShockwaveCollidedMaterial && ShockwaveRangeDisplay->GetMaterial(0) != ShockwaveCollidedMaterial)
+		if (ShockwaveCollidedMaterial && ShockwaveRangeDisplay->GetMaterial(0) != ShockwaveCollidedMaterial && !bIsSelected)
 		{
 			ShockwaveRangeDisplay->SetMaterial(0, ShockwaveCollidedMaterial);
 		}
@@ -239,7 +241,7 @@ void ABitBomb::ShockwaveRangeDisplayEndOverlap(AActor* OtherActor, UPrimitiveCom
 			TArray<AActor*> OverlapingBombs;
 			ShockwaveRangeDisplay->GetOverlappingActors(OverlapingBombs, ABitBomb::StaticClass());
 
-			if (OverlapingBombs.Num() <= 1 && ShockwaveNotCollidedMaterial)
+			if (OverlapingBombs.Num() <= 1 && ShockwaveNotCollidedMaterial && !bIsSelected)
 			{
 				ShockwaveRangeDisplay->SetMaterial(0, ShockwaveNotCollidedMaterial);
 			}
@@ -298,6 +300,51 @@ void ABitBomb::BombMeshOnEndOverlap(AActor* OtherActor, UPrimitiveComponent* Oth
 	}
 }
 
+
+/*
+* Selecting Bomb
+*/
+void ABitBomb::SelectBomb()
+{
+	bIsSelected = true;
+
+	if (ShockwaveSelectedBombMaterial)
+	{
+		BombMesh->SetMaterial(0, ShockwaveSelectedBombMaterial);
+		ShockwaveRangeDisplay->SetMaterial(0, ShockwaveSelectedBombMaterial);
+	}
+}
+
+void ABitBomb::DeselectBomb()
+{
+	bIsSelected = false;
+
+	TArray<AActor*> OverlapingBombs;
+	ShockwaveRangeDisplay->GetOverlappingActors(OverlapingBombs, ABitBomb::StaticClass());
+
+	if (OverlapingBombs.Num() <= 1)
+	{
+		ShockwaveRangeDisplay->SetMaterial(0, ShockwaveNotCollidedMaterial);
+		BombMesh->SetMaterial(0, BombMesNotCollidedMaterial);
+	}
+	else
+	{
+		ShockwaveRangeDisplay->SetMaterial(0, ShockwaveCollidedMaterial);		
+	}
+
+
+	BombMesh->GetOverlappingActors(OverlapingBombs, ABitBomb::StaticClass());
+	if (OverlapingBombs.Num() <= 1)
+	{
+		BombMesh->SetMaterial(0, BombMesNotCollidedMaterial);
+	}
+	else
+	{
+		BombMesh->SetMaterial(0, BombMeshCollidedMaterial);
+	}
+
+
+}
 
 /*
 * Dev Helpers

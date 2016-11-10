@@ -28,7 +28,7 @@ class BOMBIT_API ABitPawn : public APawn
 	TSubclassOf<class ABitBomb>  DefaultBombToSpawn;
 
 	UPROPERTY()
-	class ABitBomb* CurrentSelectedBomb;
+	TWeakObjectPtr<ABitBomb> CurrentSelectedBomb;
 
 public:
 	// Sets default values for this pawn's properties

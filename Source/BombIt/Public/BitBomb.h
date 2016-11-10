@@ -57,6 +57,9 @@ class BOMBIT_API ABitBomb : public AActor
 	// whether the bomb can explode
 	bool bIsActivated;
 
+	// whether the bomb is selected by the player
+	bool bIsSelected;
+
 	/*
 	* Shockwave range display overlap
 	*/
@@ -88,6 +91,9 @@ class BOMBIT_API ABitBomb : public AActor
 
 	UFUNCTION()
 	void ShockwaveDisplayTick(float Value);
+
+	UPROPERTY(Category = ShockwaveRangeDisplaySettings, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+	class UMaterialInstance* ShockwaveSelectedBombMaterial;
 	
 
 	/*
@@ -116,6 +122,7 @@ class BOMBIT_API ABitBomb : public AActor
 
 	UPROPERTY(EditDefaultsOnly, Category = ShockwaveSettings, meta = (AllowPrivateAccess = "true"))
 	class URadialForceComponent* RadialForce;
+	
 
 public:	
 	// Sets default values for this actor's properties
@@ -133,6 +140,13 @@ public:
 	void Explode();
 
 	bool isActivated();
+
+	/*
+	* Shockwave range display
+	*/
+
+	void SelectBomb();
+	void DeselectBomb();
 
 	/*
 	* Dev Helpers

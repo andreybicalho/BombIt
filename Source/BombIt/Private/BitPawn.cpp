@@ -4,6 +4,7 @@
 #include "BitPawn.h"
 #include "BitPlayerController.h"
 #include "BitBomb.h"
+#include "BitTarget.h"
 
 
 // Sets default values
@@ -108,10 +109,23 @@ void ABitPawn::PlaceBomb()
 		if (Hit.bBlockingHit)
 		{
 			// We hit something, spawn bomb there
-			if (DefaultBombToSpawn)
-			{
-				CurrentSelectedBomb = GetWorld()->SpawnActor<ABitBomb>(DefaultBombToSpawn, Hit.ImpactPoint, FRotator::ZeroRotator);
-				// TODO: attach bomb there
+			AActor* TargetActor = Cast<AActor>(Hit.GetActor());
+			if (DefaultBombToSpawn && TargetActor)
+			{				
+				if (TargetActor)
+				{
+					if (CurrentSelectedBomb.IsValid())
+					{
+						CurrentSelectedBomb->DeselectBomb();
+					}
+
+					CurrentSelectedBomb = GetWorld()->SpawnActor<ABitBomb>(DefaultBombToSpawn, Hit.ImpactPoint, FRotator::ZeroRotator);
+					if (CurrentSelectedBomb.IsValid())
+					{
+						// CurrentSelectedBomb->AttachToActor(TargetActor, FAttachmentTransformRules::KeepRelativeTransform);
+						CurrentSelectedBomb->SelectBomb();
+					}
+				}
 			}
 
 		}
@@ -120,7 +134,7 @@ void ABitPawn::PlaceBomb()
 
 void ABitPawn::SetBombRadius(float Value)
 {
-	if (CurrentSelectedBomb)
+	if (CurrentSelectedBomb.IsValid())
 	{
 		CurrentSelectedBomb->SetShockwaveRadius(Value);
 	}
@@ -128,7 +142,7 @@ void ABitPawn::SetBombRadius(float Value)
 
 void ABitPawn::DetonateBomb()
 {
-	if (CurrentSelectedBomb)
+	if (CurrentSelectedBomb.IsValid())
 	{
 		CurrentSelectedBomb->Explode();
 	}
@@ -144,7 +158,19 @@ void ABitPawn::SelectBomb()
 		MyPC->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
 
 		if (Hit.bBlockingHit)
-		{			
+		{
+			ABitBomb* SelectedBomb = Cast<ABitBomb>(Hit.GetActor());
+			if (SelectedBomb)
+			{
+				if (CurrentSelectedBomb.IsValid())
+				{
+					CurrentSelectedBomb->DeselectBomb();
+				}
+
+				CurrentSelectedBomb = SelectedBomb;
+				CurrentSelectedBomb->SelectBomb();
+			}
+
 			GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Blue, FString::Printf(TEXT("Found something!!!")));
 		}
 	}
